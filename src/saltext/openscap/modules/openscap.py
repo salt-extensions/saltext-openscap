@@ -78,7 +78,7 @@ def xccdf(params):
         tempdir = tempfile.mkdtemp()
         # pylint: disable-next=consider-using-with
         proc = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, cwd=tempdir)
-        (_, error) = proc.communicate()
+        _, error = proc.communicate()
         returncode = proc.returncode
         success = _OSCAP_EXIT_CODES_MAP.get(returncode, False)
         if success:
