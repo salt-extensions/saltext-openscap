@@ -431,3 +431,164 @@ def test_new_openscap_xccdf_eval_evaluation_error(policy_file):
             "success": False,
             "returncode": 1,
         }
+
+
+@patch("saltext.openscap.modules.openscap.os.path.exists", Mock(return_value=True))
+def test_new_openscap_xccdf_eval_success_with_skip_rules(policy_file, tmp_path):
+    mock_mkdtemp = Mock(return_value=str(tmp_path))
+    patch_mkdtemp = patch("tempfile.mkdtemp", mock_mkdtemp)
+    patch_rmtree = patch("shutil.rmtree", Mock())
+    mock_popen = MagicMock(
+        return_value=Mock(**{"returncode": 0, "communicate.return_value": (b"", b"")})
+    )
+    patch_popen = patch("saltext.openscap.modules.openscap.Popen", mock_popen)
+    with patch_popen, patch_mkdtemp, patch_rmtree:
+        response = openscap.xccdf_eval(
+            policy_file,
+            profile="Default",
+            skip_rule=["rule-one", "rule-two"],
+            oval_results=True,
+            results="results.xml",
+            report="report.html",
+        )
+
+        assert mock_mkdtemp.call_count == 1
+        expected_cmd = [
+            "oscap",
+            "xccdf",
+            "eval",
+            "--oval-results",
+            "--results",
+            "results.xml",
+            "--report",
+            "report.html",
+            "--profile",
+            "Default",
+            "--skip-rule",
+            "rule-one",
+            "--skip-rule",
+            "rule-two",
+            policy_file,
+        ]
+        openscap.Popen.assert_called_once_with(
+            expected_cmd,
+            cwd=str(tmp_path),
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+        openscap.__salt__["cp.push_dir"].assert_called_once_with(str(tmp_path))
+        assert openscap.shutil.rmtree.call_count == 1
+        assert response == {
+            "upload_dir": str(tmp_path),
+            "error": "",
+            "success": True,
+            "returncode": 0,
+        }
+
+
+@patch("saltext.openscap.modules.openscap.os.path.exists", Mock(return_value=True))
+def test_new_openscap_xccdf_eval_success_with_single_rules_as_string(policy_file, tmp_path):
+    mock_mkdtemp = Mock(return_value=str(tmp_path))
+    patch_mkdtemp = patch("tempfile.mkdtemp", mock_mkdtemp)
+    patch_rmtree = patch("shutil.rmtree", Mock())
+    mock_popen = MagicMock(
+        return_value=Mock(**{"returncode": 0, "communicate.return_value": (b"", b"")})
+    )
+    patch_popen = patch("saltext.openscap.modules.openscap.Popen", mock_popen)
+    with patch_popen, patch_mkdtemp, patch_rmtree:
+        response = openscap.xccdf_eval(
+            policy_file,
+            profile="Default",
+            rule="rule-one",
+            skip_rule="rule-two",
+            oval_results=True,
+        )
+
+        assert mock_mkdtemp.call_count == 1
+        expected_cmd = [
+            "oscap",
+            "xccdf",
+            "eval",
+            "--oval-results",
+            "--profile",
+            "Default",
+            "--rule",
+            "rule-one",
+            "--skip-rule",
+            "rule-two",
+            policy_file,
+        ]
+        openscap.Popen.assert_called_once_with(
+            expected_cmd,
+            cwd=str(tmp_path),
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+        openscap.__salt__["cp.push_dir"].assert_called_once_with(str(tmp_path))
+        assert openscap.shutil.rmtree.call_count == 1
+        assert response == {
+            "upload_dir": str(tmp_path),
+            "error": "",
+            "success": True,
+            "returncode": 0,
+        }
+
+
+@patch("saltext.openscap.modules.openscap.os.path.exists", Mock(return_value=True))
+def test_new_openscap_xccdf_eval_success_with_content_selection(policy_file, tmp_path):
+    mock_mkdtemp = Mock(return_value=str(tmp_path))
+    patch_mkdtemp = patch("tempfile.mkdtemp", mock_mkdtemp)
+    patch_rmtree = patch("shutil.rmtree", Mock())
+    mock_popen = MagicMock(
+        return_value=Mock(**{"returncode": 0, "communicate.return_value": (b"", b"")})
+    )
+    patch_popen = patch("saltext.openscap.modules.openscap.Popen", mock_popen)
+    with patch_popen, patch_mkdtemp, patch_rmtree:
+        response = openscap.xccdf_eval(
+            policy_file,
+            profile="Default",
+            reference="stigid:RHEL-09-211010",
+            cpe="/usr/share/openscap/cpe/openscap-cpe-dict.xml",
+            datastream_id="scap_org.open-scap_datastream_from_xccdf",
+            xccdf_id="scap_org.open-scap_cref_xccdf.xml",
+            benchmark_id="xccdf_org.ssgproject.content_benchmark_RHEL-9",
+            local_files="/var/cache/openscap",
+            fetch_remote_resources=True,
+        )
+
+        assert mock_mkdtemp.call_count == 1
+        expected_cmd = [
+            "oscap",
+            "xccdf",
+            "eval",
+            "--profile",
+            "Default",
+            "--reference",
+            "stigid:RHEL-09-211010",
+            "--cpe",
+            "/usr/share/openscap/cpe/openscap-cpe-dict.xml",
+            "--datastream-id",
+            "scap_org.open-scap_datastream_from_xccdf",
+            "--xccdf-id",
+            "scap_org.open-scap_cref_xccdf.xml",
+            "--benchmark-id",
+            "xccdf_org.ssgproject.content_benchmark_RHEL-9",
+            "--fetch-remote-resources",
+            "--local-files",
+            "/var/cache/openscap",
+            policy_file,
+        ]
+        openscap.Popen.assert_called_once_with(
+            expected_cmd,
+            cwd=str(tmp_path),
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+        openscap.__salt__["cp.push_dir"].assert_called_once_with(str(tmp_path))
+        assert openscap.shutil.rmtree.call_count == 1
+        assert response == {
+            "upload_dir": str(tmp_path),
+            "error": "",
+            "success": True,
+            "returncode": 0,
+        }
