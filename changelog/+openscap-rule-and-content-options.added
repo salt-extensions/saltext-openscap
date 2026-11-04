@@ -1,0 +1,1 @@
+Add the oscap options that select rules and content to `xccdf_eval`, and accept a list for `rule` and `skip_rule`
